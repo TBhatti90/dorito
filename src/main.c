@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 int main() {
-	printf("Hello World\n");
+	printf("%lu\n", sizeof(unsigned short));
 
 	return 0;
 }

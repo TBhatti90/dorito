@@ -1,6 +1,6 @@
 #include "cpu.h"
 
-int start() {
+int start(FILE* filePtr) {
 	//RAM
 	unsigned short mem[4096] = {0};
 	//Registers
@@ -20,7 +20,7 @@ int start() {
 	int e = 0;
 
 	//Initialize
-	if ((e = initialize(&PC, &delay, &sound, mem)) != 0) {
+	if ((e = initialize(&PC, &delay, &sound, mem, filePtr)) != 0) {
 		return -1;
 	}
 
@@ -31,7 +31,7 @@ int start() {
 	return 0;
 }
 
-int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short* memPtr) {
+static int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short* memPtr, FILE* filePtr) {
 	//Setting PC to proper memory location
 	*pcPtr = 0x200;
 
@@ -43,12 +43,12 @@ int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* so
 	font(memPtr);
 
 	//Placing game into memory
-	//game();
+	game(filePtr);
 	
 	return 0;
 }
 
-void font(unsigned short* memPtr) {
+static void font(unsigned short* memPtr) {
 	//0
 	*(memPtr + 0x50) = 0xF0, *(memPtr + 0x51) = 0x90, *(memPtr + 0x52) = 0x90, *(memPtr + 0x53) = 0x90, *(memPtr + 0x54) = 0xF0;
 	//1
@@ -83,5 +83,5 @@ void font(unsigned short* memPtr) {
 	*(memPtr + 0x9B) = 0xF0, *(memPtr + 0x9C) = 0x80, *(memPtr + 0x9D) = 0xF0, *(memPtr + 0x9E) = 0x80, *(memPtr + 0x9F) = 0x80;
 }
 
-int game() {
+static int game(FILE* filePtr) {
 }

@@ -1,6 +1,6 @@
 #include <stdio.h>
 
 int start(FILE* filePtr);
-static int initialize(unsigned short int* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short int* memPtr, FILE* filePtr);
-static void font(unsigned short int* memPtr);
-static int game();
+int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short* memPtr, FILE* filePtr);
+void font(unsigned short* memPtr);
+int game(FILE* filePtr, unsigned short* memPtr);

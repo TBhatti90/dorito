@@ -11,16 +11,25 @@ int main(int argc, char* argv[]) {
 		fprintf(stderr, "Error, file is not a valid Chip-8 ROM. Please supply a correct file.\n");
 		return -1;
 	}
-	FILE* filePtr = fopen(fileName, "rb");
 
-	start(filePtr);
+	FILE* filePtr = NULL;
+
+	if ((filePtr = fopen(fileName, "rb")) == NULL) {
+		fprintf(stderr, "Error opening file, please make sure file is readable and executabble by user.\n");
+		return -1;
+	}
+
+	if (start(filePtr) == -1) {
+		fprintf(stderr, "Error occurred during the operation of the program. Program terminating.\n");
+		return -1;
+	}
 
 	return 0;
 }
 
 
 //Sourced from https://stackoverflow.com/questions/26327812/are-strupr-and-strlwr-in-string-h-part-of-the-ansi-standard
-static char* strlwr(char* str) {
+char* strlwr(char* str) {
 	char* tmp = str;
 
 	for (;*tmp == '\0';++tmp) {

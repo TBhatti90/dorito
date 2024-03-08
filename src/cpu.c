@@ -24,6 +24,7 @@ int start(FILE* filePtr) {
 		return -1;
 	}
 
+	//Fetch, Decode, and Execute
 	while(1) {
 		break;
 	}
@@ -31,7 +32,7 @@ int start(FILE* filePtr) {
 	return 0;
 }
 
-static int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short* memPtr, FILE* filePtr) {
+int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned char* soundPtr, unsigned short* memPtr, FILE* filePtr) {
 	//Setting PC to proper memory location
 	*pcPtr = 0x200;
 
@@ -43,12 +44,14 @@ static int initialize(unsigned short* pcPtr, unsigned char* delayPtr, unsigned c
 	font(memPtr);
 
 	//Placing game into memory
-	game(filePtr);
+	if (game(filePtr, memPtr) == -1) {
+		return -1;
+	}
 	
 	return 0;
 }
 
-static void font(unsigned short* memPtr) {
+void font(unsigned short* memPtr) {
 	//0
 	*(memPtr + 0x50) = 0xF0, *(memPtr + 0x51) = 0x90, *(memPtr + 0x52) = 0x90, *(memPtr + 0x53) = 0x90, *(memPtr + 0x54) = 0xF0;
 	//1
@@ -83,5 +86,30 @@ static void font(unsigned short* memPtr) {
 	*(memPtr + 0x9B) = 0xF0, *(memPtr + 0x9C) = 0x80, *(memPtr + 0x9D) = 0xF0, *(memPtr + 0x9E) = 0x80, *(memPtr + 0x9F) = 0x80;
 }
 
-static int game(FILE* filePtr) {
+int game(FILE* filePtr, unsigned short* memPtr) {
+	//Getting file size
+	if (fseek(filePtr, 0, SEEK_END) != 0) {
+		return -1;
+	}
+	unsigned long fileSize = 0;
+	if ((fileSize = ftell(filePtr)) < 0) {
+		return -1;
+	}
+	if (fseek(filePtr, 0, SEEK_SET) != 0) {
+		return -1;
+	}
+	//Reading file
+	unsigned long count = fread((memPtr + 0x200), 1, fileSize, filePtr);
+	//Checking if EOF or error during read
+	if (count < fileSize) {
+		if (ferror(filePtr)) {
+			return -1;
+		}
+	}
+
+	if (fclose(filePtr) == EOF) {
+		return -1;
+	}
+
+	return 0;
 }

@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include "external.h"
 
-int clear(unsigned char display[64][32]);
-int draw(unsigned char display[64][32]);
+int clear(unsigned char display[64][32], SDL_Window* window, SDL_Surface* screenSurface);
+int draw(unsigned char display[64][32], SDL_Window* window, SDL_Surface* screenSurface);

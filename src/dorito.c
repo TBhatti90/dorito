@@ -19,10 +19,39 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	if (start(filePtr) == -1) {
-		fprintf(stderr, "Error occurred during the operation of the program. Program terminating.\n");
+	SDL_Window* window = NULL;
+	SDL_Surface* screenSurface = NULL;
+	const int SCREEN_WIDTH = 640;
+	const int SCREEN_HEIGHT = 480;
+
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		fprintf(stderr, "SDL could not be initialized! SDL_Error: %s\n", SDL_GetError());
 		return -1;
+	} else {
+		window = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+		if (window == NULL) {
+			fprintf(stderr, "Window could not be created! SDL_Error %s\n", SDL_GetError());
+			return -1;
+		} else {
+			screenSurface = SDL_GetWindowSurface(window);
+			SDL_FillRect(screenSurface, NULL, SDL_MapRGB(screenSurface -> format, 0xFF, 0xFF, 0xFF));
+			SDL_UpdateWindowSurface(window);
+			SDL_Event e;
+			bool quit = false;
+			while (quit == false) {
+				while (SDL_PollEvent(&e)) {
+					if (e.type == SDL_QUIT) {
+						quit = true;
+					}
+				}
+			}
+		}
 	}
+
+//	if (start(filePtr, window, screenSurface) == -1) {
+//		fprintf(stderr, "Error occurred during the operation of the program. Program terminating.\n");
+//		return -1;
+//	}
 
 	return 0;
 }

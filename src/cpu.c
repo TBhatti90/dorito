@@ -1,7 +1,7 @@
 #include "cpu.h"
 
 //Start of Emulation cycle
-int start(FILE* filePtr) {
+int start(FILE* filePtr, SDL_Window* window, SDL_Surface* screenSurface) {
 	//RAM
 	unsigned char mem[4096] = {0};
 	//Registers
@@ -32,7 +32,7 @@ int start(FILE* filePtr) {
 	//Fetch, Decode, and Execute
 	while(1) {
 		unsigned short instruction = fetch(mem, PC);
-		decode_and_execute(&instruction, PC, SP, V, stack, I, &delay, &sound, mem, display);
+		decode_and_execute(&instruction, PC, SP, V, stack, I, &delay, &sound, mem, display, window, screenSurface);
 	}
 
 	return 0;
@@ -135,7 +135,7 @@ unsigned short fetch(unsigned char mem[], unsigned short* PC) {
 }
 
 //Decode and Execute instruction of game data, from RAM
-int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32]) {
+int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32], SDL_Window* window, SDL_Surface* screenSurface) {
 	unsigned short nnn = *instructionPtr & 0x0FFF;
 	unsigned char n = *instructionPtr & 0x000F;
 	unsigned char x = *instructionPtr & 0x0F00;
@@ -152,7 +152,7 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 		case 0x0:
 			//Clears the screen. TODO: needs gpu
 			if (*instructionPtr == 0x00E0) {
-				clear(display);
+				clear(display, window, screenSurface);
 			//Returns from subroutine. Set PC to address at top of stack, subtract 1 from SP.
 			} else if (*instructionPtr == 0x00EE) {
 				*PC = stack[*SP];

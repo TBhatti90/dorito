@@ -17,6 +17,8 @@ int start(FILE* filePtr) {
 	unsigned char* SP = 0;
 	//Stack
 	unsigned short stack[16] = {0};
+	//Display
+	unsigned char display[64][32] = {0};
 	//Error checking
 	int e = 0;
 	//Random number seed
@@ -30,8 +32,7 @@ int start(FILE* filePtr) {
 	//Fetch, Decode, and Execute
 	while(1) {
 		unsigned short instruction = fetch(mem, PC);
-		decode_and_execute(&instruction, PC, SP, V, stack, I);
-		break;
+		decode_and_execute(&instruction, PC, SP, V, stack, I, &delay, &sound, mem, display);
 	}
 
 	return 0;
@@ -134,7 +135,7 @@ unsigned short fetch(unsigned char mem[], unsigned short* PC) {
 }
 
 //Decode and Execute instruction of game data, from RAM
-int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I) {
+int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32]) {
 	unsigned short nnn = *instructionPtr & 0x0FFF;
 	unsigned char n = *instructionPtr & 0x000F;
 	unsigned char x = *instructionPtr & 0x0F00;
@@ -143,12 +144,15 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 	unsigned char z = *instructionPtr & 0xF000;
 	unsigned short carryCheck = 0;
 	unsigned char randomByte = rand() % 256;
+	unsigned char hundreds = 0;
+	unsigned char tens = 0;
+	unsigned char ones = 0;
 
 	switch (z) {
 		case 0x0:
 			//Clears the screen. TODO: needs gpu
 			if (*instructionPtr == 0x00E0) {
-				//clear();
+				clear(display);
 			//Returns from subroutine. Set PC to address at top of stack, subtract 1 from SP.
 			} else if (*instructionPtr == 0x00EE) {
 				*PC = stack[*SP];
@@ -283,6 +287,9 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 		//Read n-bytes from RAM, starting at address I. These bytes are displayed as sprites at location (Vx,Vy). Sprites are XORed onto the screen. If this causes any pixels to be erased, VF is set to 1, otherwise set to 0. If sprite is positioned so part of it is outside the coordinates of the display, wrap it around to the opposite side of the screen.
 		case 0xD:
 			//TODO: work on gpu.
+			for (unsigned char i = 0; i < n; ++i) {
+				
+			}
 			break;
 		case 0xE:
 			//Skip next instruction if key with the value of Vx is pressed. Check keyboard, if key corresponding to the value of Vx is in the UP position, increment PC by 2.
@@ -295,6 +302,110 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 			break;
 		case 0xF:
 			switch (y) {
+				case 0x0:
+					//Sets Vx to the delay timer.
+					if (n == 0x7) {
+						V[x] = *delayPtr;
+					//Waits for a key press, stores the value of the key in Vx.
+					} else if (n == 0xA) {
+						//TODO: input
+						while (1) { //input is NOT pressed
+							break;
+						}
+					}
+					break;
+				case 0x1:
+					//Sets delay timer to Vx.
+					if (n == 0x5) {
+						*delayPtr = V[x];
+					//Sets sound timer to Vx.
+					} else if (n == 0x8) {
+						*soundPtr = V[x];
+					//Adds I + Vx, and stores the result in I.
+					} else if (n == 0xE) {
+						*I += V[x];
+					}
+					break;
+				//Sets I to the location for the hexadecimal sprite(0x0 - 0xF) corresponding to the value of Vx.
+				case 0x2:
+					//Look up Vx's RAM location and set I to that. For example, if Vx is 12
+					//Maybe look up Vx's GPU display location?
+					//TODO: gpu related? [64][32]
+					switch (V[x]) {
+						case 0x0:
+							*I = mem[0x50];
+							break;
+						case 0x1:
+							*I = mem[0x55];
+							break;
+						case 0x2:
+							*I = mem[0x5A];
+							break;
+						case 0x3:
+							*I = mem[0x5F];
+							break;
+						case 0x4:
+							*I = mem[0x64];
+							break;
+						case 0x5:
+							*I = mem[0x69];
+							break;
+						case 0x6:
+							*I = mem[0x6E];
+							break;
+						case 0x7:
+							*I = mem[0x73];
+							break;
+						case 0x8:
+							*I = mem[0x78];
+							break;
+						case 0x9:
+							*I = mem[0x7D];
+							break;
+						case 0xA:
+							*I = mem[0x82];
+							break;
+						case 0xB:
+							*I = mem[0x87];
+							break;
+						case 0xC:
+							*I = mem[0x8C];
+							break;
+						case 0xD:
+							*I = mem[0x91];
+							break;
+						case 0xE:
+							*I = mem[0x96];
+							break;
+						case 0xF:
+							*I = mem[0x9B];
+							break;
+						default:
+							break;
+					}
+					break;
+				//Stores BCD (binary-coded decimal) representation of Vx in memory locations I, I+1, and I+2, in that order. Hundreds in I, tens in I+1, and ones in I+2.
+				case 0x3:
+					hundreds = V[x] / 100;
+					tens = (V[x] / 10) % 10;
+					ones = (V[x] % 100) % 10;
+
+					mem[*I] = hundreds;
+					mem[*I+1] = tens;
+					mem[*I+2] = ones;
+					break;
+				//Stores registers V0 through Vx in memory locations starting at I.
+				case 0x5:
+					for (unsigned char index = 0; index < x+1; ++index) {
+						mem[*I+index] = V[index];
+					}
+					break;
+				//Reads memory locations starting at I, and stores them in registers V0 through Vx.
+				case 0x6:
+					for (unsigned char index = 0; index < x+1; ++index) {
+						V[index] = mem[*I+index];
+					}
+					break;
 				default:
 					break;
 			}

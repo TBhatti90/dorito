@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 	FILE* filePtr = NULL;
 
 	if ((filePtr = fopen(fileName, "rb")) == NULL) {
-		fprintf(stderr, "Error opening file, please make sure file is readable and executabble by user.\n");
+		fprintf(stderr, "Error opening file, please make sure file is readable and executable by user.\n");
 		return -1;
 	}
 

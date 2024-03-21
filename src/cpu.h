@@ -8,4 +8,4 @@ int initialize(unsigned short* PC, unsigned char* delayPtr, unsigned char* sound
 void font(unsigned char mem[]);
 int game(FILE* filePtr, unsigned char mem[]);
 unsigned short fetch(unsigned char mem[], unsigned short* PC);
-int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32], SDL_Window* window, SDL_Surface* screenSurface);
+int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32], unsigned char* drawFlag, unsigned char* clearFlag);

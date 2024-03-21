@@ -23,6 +23,10 @@ int start(FILE* filePtr, SDL_Window* window, SDL_Surface* screenSurface) {
 	int e = 0;
 	//Random number seed
 	srand(time(NULL));
+	//Draw flag
+	unsigned char drawFlag = 0;
+	//Clear flag
+	unsigned char clearFlag = 0;
 
 	//Initialize
 	if ((e = initialize(PC, &delay, &sound, mem, filePtr)) != 0) {
@@ -30,9 +34,15 @@ int start(FILE* filePtr, SDL_Window* window, SDL_Surface* screenSurface) {
 	}
 
 	//Fetch, Decode, and Execute
-	while(1) {
+	for (int i = 0; i < 700; ++i) {
 		unsigned short instruction = fetch(mem, PC);
-		decode_and_execute(&instruction, PC, SP, V, stack, I, &delay, &sound, mem, display, window, screenSurface);
+		decode_and_execute(&instruction, PC, SP, V, stack, I, &delay, &sound, mem, display, &drawFlag, &clearFlag);
+		if (clearFlag) {
+			clear(display, window, screenSurface);
+		}
+		if (drawFlag) {
+			draw(display, window, screenSurface);
+		}
 	}
 
 	return 0;
@@ -135,7 +145,7 @@ unsigned short fetch(unsigned char mem[], unsigned short* PC) {
 }
 
 //Decode and Execute instruction of game data, from RAM
-int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32], SDL_Window* window, SDL_Surface* screenSurface) {
+int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsigned char* SP, unsigned char V[], unsigned short stack[], unsigned short* I, unsigned char* delayPtr, unsigned char* soundPtr, unsigned char mem[], unsigned char display[64][32], unsigned char* drawFlag, unsigned char* clearFlag) {
 	unsigned short nnn = *instructionPtr & 0x0FFF;
 	unsigned char n = *instructionPtr & 0x000F;
 	unsigned char x = *instructionPtr & 0x0F00;
@@ -147,12 +157,18 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 	unsigned char hundreds = 0;
 	unsigned char tens = 0;
 	unsigned char ones = 0;
+	unsigned char xCoord = 0;
+	unsigned char yCoord = 0;
+	unsigned char sprite = 0;
+	unsigned char pixel = 0;
+	unsigned char divisor = 0;
 
 	switch (z) {
 		case 0x0:
 			//Clears the screen. TODO: needs gpu
 			if (*instructionPtr == 0x00E0) {
-				clear(display, window, screenSurface);
+				*drawFlag = 1;
+				*clearFlag = 1;
 			//Returns from subroutine. Set PC to address at top of stack, subtract 1 from SP.
 			} else if (*instructionPtr == 0x00EE) {
 				*PC = stack[*SP];
@@ -287,8 +303,33 @@ int decode_and_execute(unsigned short* instructionPtr, unsigned short* PC, unsig
 		//Read n-bytes from RAM, starting at address I. These bytes are displayed as sprites at location (Vx,Vy). Sprites are XORed onto the screen. If this causes any pixels to be erased, VF is set to 1, otherwise set to 0. If sprite is positioned so part of it is outside the coordinates of the display, wrap it around to the opposite side of the screen.
 		case 0xD:
 			//TODO: work on gpu.
+			*drawFlag = 1;
+			xCoord = V[x] & 63;
+			yCoord = V[y] & 31;
+			V[0xF] = 0;
 			for (unsigned char i = 0; i < n; ++i) {
-				
+				sprite = mem[*I + i];
+				divisor = 0x80;
+				for (unsigned char j = 8; j > 0; --j) {
+					pixel = sprite & divisor;
+					divisor /= 2;
+					if (pixel == 1 && display[xCoord][yCoord]) {
+						display[xCoord][yCoord] = 0;
+						V[0xF] = 1;
+					} else if (pixel == 0 && !display[xCoord][yCoord]) {
+						display[xCoord][yCoord] = 1;
+						V[0xF] = 0;
+					}
+					++xCoord;
+					if (xCoord > 63) {
+						break;
+					}
+				}
+				if (yCoord > 31) {
+					break;
+				}
+				++yCoord;
+
 			}
 			break;
 		case 0xE:
